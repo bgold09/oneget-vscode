@@ -1,0 +1,5 @@
+build: off
+
+test_script:
+  - ps: .\RunTests.ps1
+  - pwsh: .\RunTests.ps1
