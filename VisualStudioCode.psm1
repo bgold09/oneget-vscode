@@ -24,7 +24,6 @@ function Install-Package
     Invoke-VSCode --install-extension $fastPackageReference
 }
 
-
 function Get-InstalledPackage
 { 
     [CmdletBinding()]
@@ -117,5 +116,6 @@ function checkVersion(
 }
 
 function Invoke-VSCode {
-    code $args
+    $exp = "code $args"
+    Invoke-Expression -Command $exp
 }
