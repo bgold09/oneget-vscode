@@ -72,18 +72,24 @@ function Get-InstalledPackage
 
         if (checkVersion $packageVersion $minVer $maxVer $requiredVer) {
             Write-Debug "Adding $packageName"
-            $swidObject = @{
-                FastPackageReference = $packageName;
-                Name = $packageName;
-                Version = $packageVersion; 
-                versionScheme  = "MultiPartNumeric";
-                summary = "Summary of your package provider";
-                Source = "source";
-            }
-            $swidTag = New-SoftwareIdentity @swidObject
+            $swidTag = New-SoftwareID $packageName $packageVersion
             Write-Output -InputObject $swidTag
         }
     }
+}
+
+function New-SoftwareID(
+    [string]$pkgName,
+    [System.Version]$pkgVersion
+) {
+    $swidObject = @{
+        FastPackageReference = $pkgName;
+        Name = $pkgName;
+        Version = $pkgVersion; 
+        versionScheme  = "MultiPartNumeric";
+    }
+    $swidTag = New-SoftwareIdentity @swidObject
+    return $swidTag 
 }
 
 function checkVersion(
