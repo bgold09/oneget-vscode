@@ -5,23 +5,7 @@ function Get-PackageProviderName {
 }
 
 function Initialize-Provider { 
-    Write-Debug -Message "initializing $($script:ProviderName)"
-}
-
-function Install-Package
-{ 
-    [CmdletBinding()]
-    param
-    (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $fastPackageReference
-    )
-
-    Write-Debug "fastref = $fastPackageReference"
-
-    Invoke-VSCode --install-extension $fastPackageReference
+    Write-Debug -Message "Initializing $($script:ProviderName)"
 }
 
 function Get-InstalledPackage
@@ -66,12 +50,9 @@ function Get-InstalledPackage
         $split = $codePackage.Split("@")
         $packageName = $split[0]
         $pv = $split[1]
-        Write-Debug "pv = $pv"
         $packageVersion = New-Object System.Version ("$pv")
-        Write-Debug "packageversion = $packageVersion"
 
         if (checkVersion $packageVersion $minVer $maxVer $requiredVer) {
-            Write-Debug "Adding $packageName"
             $swidTag = New-SoftwareID $packageName $packageVersion
             Write-Output -InputObject $swidTag
         }
@@ -88,8 +69,7 @@ function New-SoftwareID(
         Version = $pkgVersion; 
         versionScheme  = "MultiPartNumeric";
     }
-    $swidTag = New-SoftwareIdentity @swidObject
-    return $swidTag 
+    return New-SoftwareIdentity @swidObject
 }
 
 function checkVersion(
@@ -122,6 +102,5 @@ function checkVersion(
 }
 
 function Invoke-VSCode {
-    $exp = "code $args"
-    Invoke-Expression -Command $exp
+    Invoke-Expression -Command "code $args"
 }
