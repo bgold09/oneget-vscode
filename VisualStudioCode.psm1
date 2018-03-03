@@ -6,6 +6,59 @@ function Get-PackageProviderName {
 
 function Initialize-Provider { 
     Write-Debug -Message "Initializing $($script:ProviderName)"
+    $script:RegisteredPackageSources = @()
+}
+
+function Resolve-PackageSource { 
+    $SourceName = $request.PackageSources
+	if (-not $SourceName) {
+		return $script:RegisteredPackageSources
+    }
+
+    $SourceName | ForEach-Object {
+		if ($request.IsCanceled) {
+            return
+        }
+
+		$PackageSource = $script:RegisteredPackageSources | Where-Object Name -like $_
+		if (-not $PackageSource) {
+			$msg = "Package source matching the name $_ not registered"
+			Write-Error -Message $msg -ErrorId PackageSourceNotFound -Category InvalidOperation -TargetObject $_
+		} else {
+            $PackageSource
+        }
+    }
+} 
+
+function Add-PackageSource {
+    [CmdletBinding()]
+    param
+    (
+        [string]$Name,
+        [string]$Location,
+        [bool]$Trusted
+    ) 
+
+    if ($Location -ne "https://marketplace.visualstudio.com/_apis/public/gallery") {
+        Write-Error "Locations other than the official gallery are not supported."
+        throw
+    }
+
+    $PSBoundParameters.Registered = $true
+    $PackageSource = New-PackageSource @PSBoundParameters
+	$script:RegisteredPackageSources += $PackageSource
+    Write-Output $PackageSource
+}
+
+function Find-Package { 
+    param(
+      [string] $name,      
+      [string] $requiredVersion,  
+      [string] $minimumVersion,     
+      [string] $maximumVersion
+    )
+
+    Write-Debug $request
 }
 
 function Get-InstalledPackage
@@ -29,6 +82,8 @@ function Get-InstalledPackage
         [string]
         $MaximumVersion
     )
+
+    Write-Debug "pkg sources = $($request.PackageSources)"
 
     $minVer = $null
     if ($MinimumVersion -ne "") {
