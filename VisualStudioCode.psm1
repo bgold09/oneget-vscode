@@ -68,6 +68,7 @@ function New-SoftwareID(
         Name = $pkgName;
         Version = $pkgVersion; 
         versionScheme  = "MultiPartNumeric";
+        Source = "Visual Studio Marketplace";
     }
     return New-SoftwareIdentity @swidObject
 }
