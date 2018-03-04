@@ -28,6 +28,8 @@ function Install-Package {
     if ($result.Count -ge 3 -and $result[2].EndsWith("was successfully installed!")) {
         $version = $result[2].Split(" ")[2].Substring(1)
         return New-SoftwareID -pkgName $fastPackageReference -pkgVersion $version
+    } else {
+        $result | ForEach-Object { Write-Error $_ }
     }
 }
 
@@ -69,7 +71,7 @@ function Add-PackageSource {
     $PSBoundParameters.Registered = $true
     $PackageSource = New-PackageSource @PSBoundParameters
 	$script:RegisteredPackageSources += $PackageSource
-    Write-Output $PackageSource
+    return $PackageSource
 }
 
 function Find-Package { 
@@ -80,11 +82,69 @@ function Find-Package {
       [string] $maximumVersion
     )
 
-    if ($requiredVersion -eq "") {
-        $requiredVersion = "1.2.3"
+    $requestBody = "
+{
+  `"filters`": [
+    {
+      `"criteria`": [
+        {
+          `"filterType`": 8,
+          `"value`": `"Microsoft.VisualStudio.Code`"
+        },
+        {
+          `"filterType`": 12,
+          `"value`": `"4096`"
+        },
+        {
+          `"filterType`": 10,
+          `"value`": `"$name`"
+        }
+      ],
+      `"pageNumber`": 1,
+      `"pageSize`": 50,
+      `"sortBy`": 0,
+      `"sortOrder`": 0
+    }
+  ],
+  `"assetTypes`": [
+    `"Microsoft.VisualStudio.Services.Icons.Default`",
+    `"Microsoft.VisualStudio.Services.Content.License`",
+    `"Microsoft.VisualStudio.Services.Content.Details`",
+    `"Microsoft.VisualStudio.Code.Manifest`",
+    `"Microsoft.VisualStudio.Services.VSIXPackage`",
+    `"Microsoft.VisualStudio.Services.Content.Changelog`"
+  ],
+  `"flags`": 914
+}"
+
+    $response = Invoke-RestMethod -Method Post `
+        -Uri "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery" `
+        -Headers @{ "Accept" = "application/json;api-version=3.0-preview.1";
+                    "Content-Type" = "application/json" } `
+        -Body $requestBody
+
+    $minVer = stringToVersion $minimumVersion
+    $maxVer = stringToVersion $maximumVersion
+    $requiredVer = stringToVersion $requiredVersion
+    
+    $results = $response.results[0].extensions `
+        | Select-Object DisplayName, @{ Name="Version"; Expression = { $_.versions[0].version } } `
+
+    if ($null -ne $requiredVer -or $null -ne $minVer -or $null -ne $maxVer) {
+        $results = $results | Where-Object { 
+            checkVersion (stringToVersion $_.Version) $minVer $maxVer $requiredVer
+        }
     }
 
-    New-SoftwareID -pkgName $name -pkgVersion $requiredVersion
+    $results | ForEach-Object { Write-Output (New-SoftwareID $_.displayName $_.version) }
+}
+
+function stringToVersion([string]$version) {
+    if ($version -eq "") {
+        return $null
+    }
+
+    return New-Object System.Version "$version"
 }
 
 function Get-InstalledPackage
@@ -142,14 +202,19 @@ function Get-InstalledPackage
 
 function New-SoftwareID(
     [string]$pkgName,
-    [System.Version]$pkgVersion
+    [System.Version]$pkgVersion,
+    [string]$sourceName
 ) {
+    if ($sourceName -eq "") {
+        $sourceName = "VisualStudioMarketplace"
+    }
+
     $swidObject = @{
         FastPackageReference = $pkgName;
         Name = $pkgName;
         Version = $pkgVersion; 
         versionScheme  = "MultiPartNumeric";
-        Source = "Visual Studio Marketplace";
+        Source = $sourceName;
     }
     return New-SoftwareIdentity @swidObject
 }
