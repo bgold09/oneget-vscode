@@ -58,7 +58,11 @@ function Find-Package {
       [string] $maximumVersion
     )
 
-    Write-Debug $request
+    if ($requiredVersion -eq "") {
+        $requiredVersion = "1.2.3"
+    }
+
+    New-SoftwareID -pkgName $name -pkgVersion $requiredVersion
 }
 
 function Get-InstalledPackage
