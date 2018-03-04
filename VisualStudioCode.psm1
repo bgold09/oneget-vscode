@@ -9,6 +9,28 @@ function Initialize-Provider {
     $script:RegisteredPackageSources = @()
 }
 
+function Install-Package {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $fastPackageReference
+    )
+
+    [string[]]$result = Invoke-VSCode --install-extension $fastPackageReference
+
+    $result | ForEach-Object {
+        Write-Debug $_
+    }
+
+    if ($result.Count -ge 3 -and $result[2].EndsWith("was successfully installed!")) {
+        $version = $result[2].Split(" ")[2].Substring(1)
+        return New-SoftwareID -pkgName $fastPackageReference -pkgVersion $version
+    }
+}
+
 function Resolve-PackageSource { 
     $SourceName = $request.PackageSources
 	if (-not $SourceName) {
