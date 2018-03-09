@@ -139,14 +139,6 @@ function Find-Package {
     $results | ForEach-Object { Write-Output (New-SoftwareID $_.displayName $_.version) }
 }
 
-function stringToVersion([string]$version) {
-    if ($version -eq "") {
-        return $null
-    }
-
-    return New-Object System.Version "$version"
-}
-
 function Get-InstalledPackage
 { 
     [CmdletBinding()]
@@ -250,4 +242,12 @@ function checkVersion(
 
 function Invoke-VSCode {
     Invoke-Expression -Command "code $args"
+}
+
+function stringToVersion([string]$version) {
+    if ($version -eq "") {
+        return $null
+    }
+
+    return New-Object System.Version "$version"
 }
