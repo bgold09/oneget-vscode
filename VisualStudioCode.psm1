@@ -128,7 +128,7 @@ function Find-Package {
     $requiredVer = stringToVersion $requiredVersion
     
     $results = $response.results[0].extensions `
-        | Select-Object DisplayName, @{ Name="Version"; Expression = { $_.versions[0].version } } `
+        | Select-Object ExtensionName, @{ Name="Version"; Expression = { $_.versions[0].version } } `
 
     if ($null -ne $requiredVer -or $null -ne $minVer -or $null -ne $maxVer) {
         $results = $results | Where-Object { 
